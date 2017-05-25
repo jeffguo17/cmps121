@@ -1,19 +1,31 @@
 package com.example.jg.cmps121;
 
 import android.graphics.PorterDuff;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.stripe.android.Stripe;
 import com.stripe.android.TokenCallback;
 import com.stripe.android.model.Card;
 import com.stripe.android.model.Token;
+import com.stripe.exception.APIConnectionException;
+import com.stripe.exception.APIException;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.CardException;
+import com.stripe.exception.InvalidRequestException;
+import com.stripe.model.Charge;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 // Credit Card Form reference from:
 //   https://github.com/yekmer/credit_card_lib
@@ -23,6 +35,8 @@ import com.stripe.android.model.Token;
 
 
 public class PaymentActivity extends AppCompatActivity {
+
+    final private String stripeApiSecretKey = "sk_test_aQsljbndMd15tGO2f3nxQm18";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,10 +186,7 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     public void submitCard(View view) {
-        // TODO: replace with your own test key
-        final String publishableApiKey = BuildConfig.DEBUG ?
-                "pk_test_6pRNASCoBOKtIshFeQd4XMUh" :
-                getString(R.string.com_stripe_publishable_key);
+        final String publishableApiKey = getString(R.string.com_stripe_publishable_key);
 
         EditText cardNumberField = (EditText) findViewById(R.id.credit_card_edit_text);
         EditText expirationDate = (EditText) findViewById(R.id.credit_card_expiration_date_editText);
@@ -210,16 +221,73 @@ public class PaymentActivity extends AppCompatActivity {
         Stripe stripe = new Stripe();
         stripe.createToken(card, publishableApiKey, new TokenCallback() {
             public void onSuccess(Token token) {
-                // TODO: Send Token information to your backend to initiate a charge
-                Toast.makeText(
-                        getApplicationContext(),
-                        "Token created: " + token.getId(),
-                        Toast.LENGTH_LONG).show();
+                Map<String, Object> params = new HashMap<String, Object>();
+                params.put("amount", 500);
+                params.put("currency", "usd");
+                params.put("description", "Clothes");
+                params.put("card", token.getId());
+
+                Button payButton = (Button) findViewById(R.id.pay_button);
+                payButton.setEnabled(false);
+
+                new makePayment().execute(params);
             }
 
             public void onError(Exception error) {
+                new SweetAlertDialog(PaymentActivity.this, SweetAlertDialog.ERROR_TYPE)
+                        .setTitleText("Payment Failed!")
+                        .setContentText("Try again later!")
+                        .show();
                 Log.d("Stripe", error.getLocalizedMessage());
             }
         });
     }
+
+    //Reference from
+    //  http://www.vogella.com/tutorials/AndroidBackgroundProcessing/article.html
+    private class makePayment extends AsyncTask<Map<String, Object>, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Map<String, Object>... params) {
+            try {
+                com.stripe.Stripe.apiKey = stripeApiSecretKey;
+                for (Map<String, Object> i : params) {
+                    Charge charge = Charge.create(i);
+                }
+
+                return true;
+            } catch (AuthenticationException e) {
+                e.printStackTrace();
+            } catch (InvalidRequestException e) {
+                e.printStackTrace();
+            } catch (APIConnectionException e) {
+                e.printStackTrace();
+            } catch (CardException e) {
+                e.printStackTrace();
+            } catch (APIException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            //Show a alert dialog of success or failure
+            if(result) {
+                new SweetAlertDialog(PaymentActivity.this, SweetAlertDialog.SUCCESS_TYPE)
+                        .setTitleText("Payment Success!")
+                        .setContentText("Your order is on the way!")
+                        .show();
+            } else {
+                new SweetAlertDialog(PaymentActivity.this, SweetAlertDialog.ERROR_TYPE)
+                        .setTitleText("Payment Failed!")
+                        .setContentText("Try again later!")
+                        .show();
+            }
+
+            Button payButton = (Button) findViewById(R.id.pay_button);
+            payButton.setEnabled(true);
+        }
+    }
+
 }

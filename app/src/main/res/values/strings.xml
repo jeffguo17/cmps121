@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">cmps121</string>
-    <string name="com.stripe.publishable_key" translatable="false">pk_live_Bo18G7D9USTNooTJgidUi4t0</string>
+    <string name="com.stripe.publishable_key" translatable="false">pk_test_VS4s4sQk0VSb0vE0K0ssFmX7</string>
 
     <string name="payment_credit_card_number_hint">Card Number</string>
     <string name="payment_expiration_hint">MM/YY</string>

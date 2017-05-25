@@ -13,6 +13,7 @@ apply plugin: 'io.fabric'
 repositories {
     maven { url 'https://maven.fabric.io/public' }
     maven { url "https://jitpack.io" }
+    mavenCentral()
 }
 
 
@@ -50,6 +51,8 @@ dependencies {
     }
 
     compile 'com.github.dbachelder:CreditCardEntry:1.4.7'
+    compile 'com.github.f0ris.sweetalert:library:1.5.1'
+
 }
 
 
